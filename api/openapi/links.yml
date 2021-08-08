@@ -9,7 +9,7 @@ info:
     email: and.barbu@gmail.com
 servers:
   - description: SwaggerHub API Auto Mocking
-    url: https://{hostname}/api
+    url: https://{hostname}/links
     variables:
       hostname:
         default: localhost

@@ -2,7 +2,7 @@ package commands
 
 import (
 	"context"
-	apiServer "github.com/AndreiBarbuOz/lnkshrtn/internal/api"
+	apiServer "github.com/AndreiBarbuOz/lnkshrtn/pkg/links"
 	"github.com/spf13/cobra"
 )
 
