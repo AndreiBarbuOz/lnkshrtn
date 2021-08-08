@@ -1,0 +1,119 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: Link Shortner server
+  description: >-
+    Sample project implementing a link shortner API
+  contact:
+    name: AndreiBarbuOz
+    email: and.barbu@gmail.com
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: https://{hostname}/api
+    variables:
+      hostname:
+        default: localhost
+paths:
+  /links:
+    post:
+      summary: Create a new link
+      description: >-
+        Create a new short link for the URL in the payload.
+      responses:
+        '201':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/LinkObject"
+      requestBody:
+        description: New URL to be add
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/LinkObjectSpec'
+    get:
+      summary: List links
+      description: >-
+        List links available on server
+      responses:
+        '200':
+          description: List of links
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/LinkObjectList'
+  /links/{link_id}:
+    get:
+      summary: Get information about a link
+      parameters:
+        - name: link_id
+          in: path
+          description: id of the link to describe
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkObject"
+  /health:
+    get:
+      summary: Get service health
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+              example: {"status": "ok"}
+components:
+  schemas:
+    LinkObject:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+          enum:
+            - v1
+        spec:
+          $ref: '#/components/schemas/LinkObjectSpec'
+        metadata:
+          type: object
+    LinkObjectList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkObject'
+        kind:
+          type: string
+          example: List
+        apiVersion:
+          type: string
+          enum:
+            - v1
+      example:
+        url: https//www.example.com
+        shortned: abcd1234
+    LinkObjectSpec:
+      type: object
+      properties:
+        url:
+          type: string
+        shortned:
+          type: string
+      required:
+        - url
+      example:
+        url: https//www.example.com
+        shortned: abcd1234
