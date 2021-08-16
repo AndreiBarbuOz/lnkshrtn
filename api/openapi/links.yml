@@ -7,15 +7,10 @@ info:
   contact:
     name: AndreiBarbuOz
     email: and.barbu@gmail.com
-servers:
-  - description: SwaggerHub API Auto Mocking
-    url: https://{hostname}/links
-    variables:
-      hostname:
-        default: localhost
 paths:
   /links:
     post:
+      operationId: createLink
       summary: Create a new link
       description: >-
         Create a new short link for the URL in the payload.
@@ -33,6 +28,7 @@ paths:
             schema:
               $ref: '#/components/schemas/LinkObjectSpec'
     get:
+      operationId: getLinks
       summary: List links
       description: >-
         List links available on server
@@ -45,6 +41,7 @@ paths:
                 $ref: '#/components/schemas/LinkObjectList'
   /links/{link_id}:
     get:
+      operationId: getLinkById
       summary: Get information about a link
       parameters:
         - name: link_id
@@ -62,6 +59,7 @@ paths:
                 $ref: "#/components/schemas/LinkObject"
   /health:
     get:
+      operationId: getHealth
       summary: Get service health
       responses:
         '200':
