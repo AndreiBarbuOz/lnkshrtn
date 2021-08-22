@@ -7,8 +7,10 @@ import (
 	"github.com/AndreiBarbuOz/lnkshrtn/pkg/links/domain"
 	links "github.com/AndreiBarbuOz/lnkshrtn/pkg/links/ports"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"net/http"
+	"time"
 )
 
 type HttpServer struct {
@@ -21,6 +23,16 @@ func (l HttpServer) CreateLink(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		BadRequest("bad-request", err, w, r)
 	}
+
+	newLink, err := domain.NewLink(postLink.Url, *postLink.Shortned, time.Now())
+	if err != nil {
+		BadRequest("bad-request", err, w, r)
+	}
+	ret, err := l.repo.CreateLink(newLink)
+	if err != nil {
+		BadRequest("bad-request", err, w, r)
+	}
+	render.Respond(w, r, ret)
 }
 
 func (l HttpServer) GetLinkById(w http.ResponseWriter, r *http.Request, linkId string) {
@@ -28,7 +40,9 @@ func (l HttpServer) GetLinkById(w http.ResponseWriter, r *http.Request, linkId s
 }
 
 func (l HttpServer) GetHealth(w http.ResponseWriter, r *http.Request) {
-	_, _ = fmt.Fprint(w, `{"status": "ok"}`)
+	render.Respond(w, r, struct {
+		Status string `json:"status"`
+	}{Status: "ok"})
 }
 
 func (l HttpServer) GetLinks(w http.ResponseWriter, r *http.Request) {
@@ -39,14 +53,15 @@ func (l HttpServer) GetLinks(w http.ResponseWriter, r *http.Request) {
 var _ links.ServerInterface = (*HttpServer)(nil)
 
 func (l *HttpServer) Run(ctx context.Context, port int) {
-	apiRouter := chi.NewRouter()
-	links.HandlerFromMux(*l, apiRouter)
+	router := chi.NewRouter()
+	router.Use(middleware.AllowContentType("application/json"))
+	handler := links.HandlerFromMux(*l, router)
 
 	fmt.Printf("Server execution\n")
 
 	s := &http.Server{
 		Addr:    "0.0.0.0:8080",
-		Handler: apiRouter,
+		Handler: handler,
 	}
 	s.ListenAndServe()
 }
