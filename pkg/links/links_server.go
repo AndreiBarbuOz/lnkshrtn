@@ -22,21 +22,36 @@ func (l HttpServer) CreateLink(w http.ResponseWriter, r *http.Request) {
 	err := render.Decode(r, &postLink)
 	if err != nil {
 		BadRequest("bad-request", err, w, r)
+		return
 	}
 
 	newLink, err := domain.NewLink(postLink.Url, *postLink.Shortned, time.Now())
 	if err != nil {
 		BadRequest("bad-request", err, w, r)
+		return
 	}
-	ret, err := l.repo.CreateLink(newLink)
+	link, err := l.repo.CreateLink(newLink)
 	if err != nil {
 		BadRequest("bad-request", err, w, r)
+		return
 	}
+
+	ret, err := domainToApiLink(link)
+	if err != nil {
+		BadRequest("bad-request", err, w, r)
+		return
+	}
+
 	render.Respond(w, r, ret)
 }
 
 func (l HttpServer) GetLinkById(w http.ResponseWriter, r *http.Request, linkId string) {
-	panic("implement me")
+	ret, err := l.repo.GetLink(linkId)
+	if err != nil {
+		http.NotFound(w, r)
+	}
+
+	render.Respond(w, r, ret)
 }
 
 func (l HttpServer) GetHealth(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +62,8 @@ func (l HttpServer) GetHealth(w http.ResponseWriter, r *http.Request) {
 
 func (l HttpServer) GetLinks(w http.ResponseWriter, r *http.Request) {
 
-	panic("implement me")
+	ret := l.repo.GetLinks()
+	render.Respond(w, r, ret)
 }
 
 var _ links.ServerInterface = (*HttpServer)(nil)
@@ -69,4 +85,17 @@ func (l *HttpServer) Run(ctx context.Context, port int) {
 func NewServer(ctx context.Context) *HttpServer {
 	var repo domain.Repository = adapters.NewMemoryLinkRepository()
 	return &HttpServer{repo}
+}
+
+func domainToApiLink(link *domain.Link) (*links.LinkObject, error) {
+	var version links.LinkObjectApiVersion = "v1"
+	var ret *links.LinkObject = &links.LinkObject{
+		ApiVersion: &version,
+		Metadata:   nil,
+		Spec: &links.LinkObjectSpec{
+			Shortned: &link.Shortned,
+			Url:      link.Url,
+		},
+	}
+	return ret, nil
 }
