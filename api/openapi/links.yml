@@ -86,6 +86,8 @@ components:
           $ref: '#/components/schemas/LinkObjectSpec'
         metadata:
           type: object
+      required:
+        - spec
     LinkObjectList:
       type: object
       properties:
@@ -95,14 +97,24 @@ components:
             $ref: '#/components/schemas/LinkObject'
         kind:
           type: string
-          example: List
+          example: LinkList
         apiVersion:
           type: string
           enum:
             - v1
+      required:
+        - items
+        - kind
+        - apiVersion
       example:
-        url: https//www.example.com
-        shortned: abcd1234
+        items:
+          apiVersion: v1
+          metadata: value
+          spec:
+            url: https//www.example.com
+            shortned: abcd1234
+        kind: LinkList
+        apiVersion: v1
     LinkObjectSpec:
       type: object
       properties:
