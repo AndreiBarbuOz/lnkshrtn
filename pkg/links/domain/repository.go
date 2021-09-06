@@ -28,5 +28,5 @@ type Repository interface {
 	CreateLink(*Link) (*Link, error)
 
 	GetLinks() []*Link
-	GetLink(shortned string) (*Link, error)
+	GetLinkByShortned(shortned string) (*Link, error)
 }

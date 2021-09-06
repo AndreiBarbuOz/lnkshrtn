@@ -67,6 +67,47 @@ func TestHttpServer_CreateLink(t *testing.T) {
 	assert.Contains(t, contentType, "application/json", "GetHealth: content type")
 }
 
+func TestHttpServer_GetLinkById(t *testing.T) {
+	ctx := context.Background()
+	server := NewServer(ctx)
+
+	var body links.LinkObjectSpec
+	body.Url = "www.test.com"
+	var tmp string = "abc123"
+	body.Shortned = &tmp
+	requestBody, err := json.Marshal(body)
+
+	if err != nil {
+		panic("Cannot marshal body")
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/links", bytes.NewReader(requestBody))
+	req.Header.Add("content-type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.CreateLink(w, req)
+	res := w.Result()
+	defer res.Body.Close()
+
+	req = httptest.NewRequest(http.MethodGet, "/links/abc123", nil)
+	req.Header.Add("content-type", "application/json")
+	w = httptest.NewRecorder()
+
+	server.GetLinkById(w, req, "abc123")
+	res = w.Result()
+	defer res.Body.Close()
+
+	assert.Equal(t, 200, res.StatusCode, "CreateLink status code")
+	responseBody, err := ioutil.ReadAll(res.Body)
+	assert.Nil(t, err, "CreateLink error")
+	assertPostedLinkIsEqual(t, requestBody, responseBody)
+
+	headers := w.Header()
+	contentType := headers.Get("Content-Type")
+	assert.NotEmpty(t, contentType, "GetHealth: Content type not returned")
+	assert.Contains(t, contentType, "application/json", "GetHealth: content type")
+}
+
 func assertPostedLinkIsEqual(t *testing.T, posted []byte, returned []byte) {
 	t.Helper()
 	var p links.LinkObjectSpec
@@ -76,7 +117,7 @@ func assertPostedLinkIsEqual(t *testing.T, posted []byte, returned []byte) {
 	err = json.Unmarshal(returned, &r)
 	assert.Nil(t, err, "Could not unmarshal returned body")
 
-	assertLinkEquals(t, &p, r.Spec)
+	assertLinkEquals(t, &p, &r.Spec)
 }
 
 var cmpRoundTimeOpt = cmp.Comparer(func(x, y time.Time) bool {

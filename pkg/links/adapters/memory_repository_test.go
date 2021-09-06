@@ -42,7 +42,7 @@ func newStandardLink(t *testing.T) *domain.Link {
 
 func assertPersistedLinkEquals(t *testing.T, repo domain.Repository, l *domain.Link) {
 	t.Helper()
-	persistedLink, err := repo.GetLink(l.Shortned)
+	persistedLink, err := repo.GetLinkByShortned(l.Shortned)
 	require.NoError(t, err)
 	assertLinkEquals(t, persistedLink, l)
 }
@@ -86,15 +86,15 @@ func TestMemoryLinkRepository_GetLinksOneElem(t *testing.T) {
 
 func TestMemoryLinkRepository_GetLink(t *testing.T) {
 	repo := NewMemoryLinkRepository()
-	_, err := repo.GetLink("shortned")
+	_, err := repo.GetLinkByShortned("shortned")
 	assert.NotNil(t, err, "Returned non nil error for non existing link")
 	newLink := newStandardLink(t)
 	_, _ = repo.CreateLink(newLink)
-	l, err := repo.GetLink("shortned")
+	l, err := repo.GetLinkByShortned("shortned")
 
 	assert.Nil(t, err, "Failed to get link")
-	assert.NotNil(t, l, "GetLink returned nil link")
+	assert.NotNil(t, l, "GetLinkByShortned returned nil link")
 
-	_, err = repo.GetLink("non_existing")
+	_, err = repo.GetLinkByShortned("non_existing")
 	assert.NotNil(t, err, "Returned non nil error for non existing link")
 }

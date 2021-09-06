@@ -17,7 +17,7 @@ const (
 type LinkObject struct {
 	ApiVersion *LinkObjectApiVersion   `json:"apiVersion,omitempty"`
 	Metadata   *map[string]interface{} `json:"metadata,omitempty"`
-	Spec       *LinkObjectSpec         `json:"spec,omitempty"`
+	Spec       LinkObjectSpec          `json:"spec"`
 }
 
 // LinkObjectApiVersion defines model for LinkObject.ApiVersion.
@@ -25,9 +25,9 @@ type LinkObjectApiVersion string
 
 // LinkObjectList defines model for LinkObjectList.
 type LinkObjectList struct {
-	ApiVersion *LinkObjectListApiVersion `json:"apiVersion,omitempty"`
-	Items      *[]LinkObject             `json:"items,omitempty"`
-	Kind       *string                   `json:"kind,omitempty"`
+	ApiVersion LinkObjectListApiVersion `json:"apiVersion"`
+	Items      []LinkObject             `json:"items"`
+	Kind       string                   `json:"kind"`
 }
 
 // LinkObjectListApiVersion defines model for LinkObjectList.ApiVersion.

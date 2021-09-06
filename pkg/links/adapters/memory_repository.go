@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var _ domain.Repository = &MemoryLinkRepository{}
+var _ domain.Repository = (*MemoryLinkRepository)(nil)
 
 type linkModel struct {
 	url      string
@@ -31,7 +31,7 @@ func (r *MemoryLinkRepository) GetLinks() []*domain.Link {
 	return ret
 }
 
-func (r *MemoryLinkRepository) GetLink(shortned string) (*domain.Link, error) {
+func (r *MemoryLinkRepository) GetLinkByShortned(shortned string) (*domain.Link, error) {
 	if ret, ok := r.links[shortned]; ok {
 		return newLinkFromModel(&ret), nil
 	}
