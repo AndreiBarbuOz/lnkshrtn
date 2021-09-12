@@ -32,11 +32,7 @@ func (l HttpServer) CreateLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ret, err := domainToApiLink(link)
-	if err != nil {
-		BadRequest("bad-request", err, w, r)
-		return
-	}
+	ret := domainToApiLink(link)
 
 	render.Respond(w, r, ret)
 }
@@ -47,11 +43,7 @@ func (l HttpServer) GetLinkById(w http.ResponseWriter, r *http.Request, linkId s
 		http.NotFound(w, r)
 	}
 
-	ret, err := domainToApiLink(link)
-	if err != nil {
-		BadRequest("bad-request", err, w, r)
-		return
-	}
+	ret := domainToApiLink(link)
 
 	render.Respond(w, r, ret)
 }
@@ -64,11 +56,12 @@ func (l HttpServer) GetHealth(w http.ResponseWriter, r *http.Request) {
 
 func (l HttpServer) GetLinks(w http.ResponseWriter, r *http.Request) {
 
-	ret, err := l.app.GetAllLinks()
+	link, err := l.app.GetAllLinks()
 	if err != nil {
 		BadRequest("bad-request", err, w, r)
 		return
 	}
+	ret := domainToApiLinkList(link)
 	render.Respond(w, r, ret)
 }
 
@@ -92,7 +85,7 @@ func NewServer(ctx context.Context) *HttpServer {
 	return &HttpServer{app}
 }
 
-func domainToApiLink(link *domain.Link) (*links.LinkObject, error) {
+func domainToApiLink(link *domain.Link) *links.LinkObject {
 	var version links.LinkObjectApiVersion = "v1"
 	var ret *links.LinkObject = &links.LinkObject{
 		ApiVersion: &version,
@@ -102,5 +95,20 @@ func domainToApiLink(link *domain.Link) (*links.LinkObject, error) {
 			Url:      link.Url,
 		},
 	}
-	return ret, nil
+	return ret
+}
+
+func domainToApiLinkList(l []*domain.Link) *links.LinkObjectList {
+	var version string = "v1"
+
+	var ret *links.LinkObjectList = &links.LinkObjectList{
+		ApiVersion: (*links.LinkObjectListApiVersion)(&version),
+		Metadata:   nil,
+		Items:      make([]links.LinkObject, 0),
+	}
+	for _, crtLink := range l {
+		ret.Items = append(ret.Items, *domainToApiLink(crtLink))
+	}
+
+	return ret
 }

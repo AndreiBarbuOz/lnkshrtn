@@ -25,9 +25,10 @@ type LinkObjectApiVersion string
 
 // LinkObjectList defines model for LinkObjectList.
 type LinkObjectList struct {
-	ApiVersion LinkObjectListApiVersion `json:"apiVersion"`
-	Items      []LinkObject             `json:"items"`
-	Kind       string                   `json:"kind"`
+	ApiVersion *LinkObjectListApiVersion `json:"apiVersion,omitempty"`
+	Items      []LinkObject              `json:"items"`
+	Kind       string                    `json:"kind"`
+	Metadata   *map[string]interface{}   `json:"metadata,omitempty"`
 }
 
 // LinkObjectListApiVersion defines model for LinkObjectList.ApiVersion.
