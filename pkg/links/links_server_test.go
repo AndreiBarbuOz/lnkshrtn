@@ -104,8 +104,50 @@ func TestHttpServer_GetLinkById(t *testing.T) {
 
 	headers := w.Header()
 	contentType := headers.Get("Content-Type")
-	assert.NotEmpty(t, contentType, "GetHealth: Content type not returned")
-	assert.Contains(t, contentType, "application/json", "GetHealth: content type")
+	assert.NotEmpty(t, contentType, "GetLinksById: Content type not returned")
+	assert.Contains(t, contentType, "application/json", "GetLinksById: content type")
+}
+
+func TestHttpServer_GetLinks(t *testing.T) {
+	ctx := context.Background()
+	server := NewServer(ctx)
+
+	var body links.LinkObjectSpec
+	body.Url = "www.test.com"
+	var tmp string = "abc123"
+	body.Shortned = &tmp
+	requestBody, err := json.Marshal(body)
+
+	if err != nil {
+		panic("Cannot marshal body")
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/links", bytes.NewReader(requestBody))
+	req.Header.Add("content-type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.CreateLink(w, req)
+	res := w.Result()
+	defer res.Body.Close()
+
+	req = httptest.NewRequest(http.MethodGet, "/links", nil)
+	req.Header.Add("content-type", "application/json")
+	w = httptest.NewRecorder()
+
+	server.GetLinks(w, req)
+	res = w.Result()
+	defer res.Body.Close()
+
+	assert.Equal(t, 200, res.StatusCode, "GetLinks status code")
+	responseBody, err := ioutil.ReadAll(res.Body)
+	assert.Nil(t, err, "GetLinks error")
+
+	headers := w.Header()
+	contentType := headers.Get("Content-Type")
+	assert.NotEmpty(t, contentType, "GetLinks: Content type not returned")
+	assert.Contains(t, contentType, "application/json", "GetLinks: content type")
+
+	assertPostedLinkInReturnedList(t, requestBody, responseBody)
 }
 
 func assertPostedLinkIsEqual(t *testing.T, posted []byte, returned []byte) {
@@ -118,6 +160,24 @@ func assertPostedLinkIsEqual(t *testing.T, posted []byte, returned []byte) {
 	assert.Nil(t, err, "Could not unmarshal returned body")
 
 	assertLinkEquals(t, &p, &r.Spec)
+}
+
+func assertPostedLinkInReturnedList(t *testing.T, posted []byte, returned []byte) {
+	t.Helper()
+	var p links.LinkObjectSpec
+	var r links.LinkObjectList
+	err := json.Unmarshal(posted, &p)
+	assert.Nil(t, err, "Could not unmarshal posted body")
+	err = json.Unmarshal(returned, &r)
+	assert.Nil(t, err, "Could not unmarshal returned body")
+
+	for _, l := range r.Items {
+		if *l.Spec.Shortned == *p.Shortned {
+			assertLinkEquals(t, &p, &l.Spec)
+			return
+		}
+	}
+	assert.FailNow(t, "posted link not part of returned list")
 }
 
 var cmpRoundTimeOpt = cmp.Comparer(func(x, y time.Time) bool {

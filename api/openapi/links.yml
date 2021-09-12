@@ -102,10 +102,11 @@ components:
           type: string
           enum:
             - v1
+        metadata:
+          type: object
       required:
         - items
         - kind
-        - apiVersion
       example:
         items:
           apiVersion: v1
