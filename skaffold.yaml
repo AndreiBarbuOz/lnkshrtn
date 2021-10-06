@@ -1,15 +1,44 @@
 apiVersion: skaffold/v2beta18
 kind: Config
+metadata:
+  name: dev
 build:
   artifacts:
     - image: andreibarbuoz/lnkshrtn
+      docker:
+        dockerfile: Dockerfile
 deploy:
   helm:
     releases:
       - name: lnkshrtn
+        createNamespace: true
         chartPath: deploy/lnkshrtn
         artifactOverrides:
           image: andreibarbuoz/lnkshrtn
         imageStrategy:
           helm: {}
         namespace: lnkshrtn
+---
+apiVersion: skaffold/v2beta18
+kind: Config
+metadata:
+  name: e2e
+build:
+  artifacts:
+    - image: andreibarbuoz/lnkshrtn-e2e
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  helm:
+    releases:
+      - name: lnkshrtn
+        createNamespace: true
+        chartPath: deploy/lnkshrtn
+        artifactOverrides:
+          image: andreibarbuoz/lnkshrtn-e2e
+        imageStrategy:
+          helm: {}
+        namespace: lnkshrtn
+        setValues:
+          "service.type": NodePort
+          "ingress.enabled": false

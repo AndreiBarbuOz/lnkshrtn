@@ -27,3 +27,50 @@ jobs:
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
           verbose: true # optional (default = false)
+
+      - name: Install skaffold
+        run: |
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
+          sudo install skaffold /usr/local/bin/
+
+      - name: Test skaffold
+        run: |
+          skaffold version
+
+      - name: Setup Minikube
+        uses: manusa/actions-setup-minikube@v2.4.2
+        with:
+          minikube version: 'v1.16.0'
+          kubernetes version: 'v1.19.2'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Interact with the cluster
+        run: |
+          kubectl get nodes
+          echo "hostname : $(hostname)"
+
+      - name: Wait for minikube to be ready
+        run: |
+          try=0
+          maxtry=10
+
+          while [[ $(kubectl get --raw='/readyz') != "ok" ]] && (( try != maxtry )); do
+            try=$((try+1))
+            echo "waiting for kubernetes api server to be ready...${try}/${maxtry}" &&  sleep 10;
+          done
+
+          try=0
+          while [[ $(kubectl get node "$(hostname)" -o 'jsonpath={.status.conditions[?(@.type=="Ready")].status}') =~ "False" ]] && (( try != maxtry )); do
+            try=$((try+1))
+            echo "waiting for server to be ready...${try}/${maxtry}" &&  sleep 10;
+          done
+
+      - name: Skaffold run
+        run: |
+          skaffold run -c e2e
+
+      - name: Test deployment
+        run: |
+          kubectl get svc lnkshrtn -n lnkshrtn
+          local_port=$(kubectl get svc lnkshrtn -n lnkshrtn -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+          curl http://localhost:"${local_port}"/health
