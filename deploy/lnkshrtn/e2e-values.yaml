@@ -14,7 +14,8 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-args: []
+args:
+  - "-test.coverprofile=/data/list.cov"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -28,7 +29,7 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext: {}
   # capabilities:
@@ -36,24 +37,24 @@ securityContext: {}
   #   - ALL
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
-  # runAsUser: 1000
+# runAsUser: 1000
 
 service:
-  type: ClusterIP
+  type: NodePort
   port: 8080
 
 ingress:
-  enabled: true
+  enabled: false
   annotations: {}
     # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+  # kubernetes.io/tls-acme: "true"
   hosts:
     - host: localhost
       paths:
-      - path: /
-        backend:
-          serviceName: chart-example.local
-          servicePort: 8080
+        - path: /
+          backend:
+            serviceName: chart-example.local
+            servicePort: 8080
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -69,7 +70,7 @@ resources: {}
   #   memory: 128Mi
   # requests:
   #   cpu: 100m
-  #   memory: 128Mi
+#   memory: 128Mi
 
 autoscaling:
   enabled: false
@@ -84,7 +85,7 @@ tolerations: []
 
 affinity: {}
 
-terminationGracePeriodSeconds: 30
+terminationGracePeriodSeconds: 120
 
 pauseContainer:
-  enabled: false
+  enabled: true

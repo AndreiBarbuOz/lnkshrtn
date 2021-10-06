@@ -27,7 +27,7 @@ build:
   artifacts:
     - image: andreibarbuoz/lnkshrtn-e2e
       docker:
-        dockerfile: Dockerfile
+        dockerfile: e2e.Dockerfile
 deploy:
   helm:
     releases:
@@ -39,6 +39,5 @@ deploy:
         imageStrategy:
           helm: {}
         namespace: lnkshrtn
-        setValues:
-          "service.type": NodePort
-          "ingress.enabled": false
+        valuesFiles:
+          - "deploy/lnkshrtn/e2e-values.yaml"

@@ -20,10 +20,11 @@ jobs:
         run: go build -v ./...
 
       - name: Test
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./pkg/...
 
       - uses: codecov/codecov-action@v2
         with:
+          files: ./coverage.out
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
           verbose: true # optional (default = false)
@@ -67,10 +68,28 @@ jobs:
 
       - name: Skaffold run
         run: |
-          skaffold run -c e2e
+          skaffold run -m e2e
 
       - name: Test deployment
         run: |
           kubectl get svc lnkshrtn -n lnkshrtn
           local_port=$(kubectl get svc lnkshrtn -n lnkshrtn -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
           curl http://localhost:"${local_port}"/health
+          curl -X POST http://localhost:"${local_port}"/links -H 'Content-Type: application/json' -d '{"url": "https//www.example.com","shortned": "abcd1234"}'
+          curl http://localhost:"${local_port}"/links
+          curl http://localhost:"${local_port}"/links/abcd1234
+
+      - name: Copy code coverage
+        run: |
+          e2e_pod=$(kubectl get po -n lnkshrtn --selector=app.kubernetes.io/instance=lnkshrtn -o jsonpath='{.items[0].metadata.name}')
+          kubectl describe po "${e2e_pod}" -n lnkshrtn
+          kubectl delete po "${e2e_pod}" --wait=false -n lnkshrtn --grace-period 120
+          sleep 10
+          kubectl cp lnkshrtn/${e2e_pod}:/data/list.cov ./e2e-coverage.out -c pause
+
+      - uses: codecov/codecov-action@v2
+        with:
+          files: ./e2e-coverage.out
+          flags: e2e # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)

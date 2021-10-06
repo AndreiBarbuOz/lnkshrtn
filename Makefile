@@ -17,4 +17,8 @@ openapi_http:
 
 .PHONY: unit_test
 unit_test:
-	go test -p=8 ./...
+	go test -v -race -coverprofile=coverage.out -covermode=atomic ./pkg/...
+
+.PHONY: build_instrumented
+build_instrumented:
+	go test -c -o dist/main_cover -covermode=atomic -coverpkg=all ./cmd
