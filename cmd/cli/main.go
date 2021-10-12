@@ -28,17 +28,7 @@ func NewCommand() *cobra.Command {
 
 	var (
 		clientOpts apiclient.ApiClientOpts
-		//localConfig *config.LocalConfig
 	)
-
-	//localConfigPath, err := config.DefaultLocalConfigPath()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//localConfig, err = config.ReadLocalConfig(localConfigPath)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 
 	var command = &cobra.Command{
 		Use:   cliName,
@@ -50,7 +40,10 @@ func NewCommand() *cobra.Command {
 	}
 
 	command.AddCommand(commands.NewLinkCommand(&clientOpts))
+	command.AddCommand(commands.NewContextCommand(&clientOpts))
+
 	command.PersistentFlags().StringVar(&clientOpts.ServerAddr, "server", "", "lnkshrtn server address")
+	command.PersistentFlags().StringVar(&clientOpts.ConfigPath, "config", "", "config file path")
 	return command
 }
 
