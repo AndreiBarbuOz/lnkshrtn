@@ -6,3 +6,10 @@
 ![architecture](docs/lnkshrtn-hexagon.png)
 
 ![repository](docs/lnkshrtn-repository.png)
+
+## Command line
+
+The override precedence of configuration values:
+1. Explicit in the command line
+2. Environment variables
+3. Configuration file

@@ -21,7 +21,7 @@ func main() {
 		binaryName = val
 	}
 	switch binaryName {
-	case "lnkshrtn-server":
+	case "lnk-server":
 		command = server.NewCommand()
 	}
 	if command == nil {

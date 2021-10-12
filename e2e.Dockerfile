@@ -14,10 +14,6 @@ RUN make build_instrumented
 
 FROM ubuntu:20.10
 
-COPY --from=lnkshrtn-build /go/src/github.com/AndreiBarbuOz/lnkshrtn/dist/main_cover /usr/local/bin/main
-
-USER root
-RUN ln -s /usr/local/bin/main /usr/local/bin/lnkshrtn-server
-RUN ln -s /usr/local/bin/main /usr/local/bin/lnkshrtn-sidecar
+COPY --from=lnkshrtn-build /go/src/github.com/AndreiBarbuOz/lnkshrtn/dist/lnk-server-dbg /usr/local/bin/lnk-server
 
 USER 999

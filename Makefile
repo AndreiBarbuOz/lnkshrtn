@@ -1,10 +1,14 @@
 
-.PHONY: build
-build:
-	go build -o dist/main cmd/main.go
+.PHONY: build-server
+build-server:
+	go build -o dist/lnk-server cmd/server/main.go
 
-run: build
-	dist/main
+run: build-server
+	dist/lnk-server
+
+.PHONY: build-cli
+build-cli:
+	go build -o dist/lnkctl cmd/cli/main.go
 
 .PHONY: clean
 clean:
@@ -15,10 +19,13 @@ openapi_http:
 	oapi-codegen -generate types -o pkg/links/ports/openapi_types.gen.go -package links api/openapi/links.yml
 	oapi-codegen -generate chi-server -o pkg/links/ports/openapi_api.gen.go -package links api/openapi/links.yml
 
-.PHONY: unit_test
-unit_test:
+	oapi-codegen -generate types -o pkg/apiclient/openapi_types.gen.go -package apiclient api/openapi/links.yml
+	oapi-codegen -generate client -o pkg/apiclient/openapi_api.gen.go -package apiclient api/openapi/links.yml
+
+.PHONY: unit-test
+unit-test:
 	go test -v -race -coverprofile=coverage.out -covermode=atomic ./pkg/...
 
 .PHONY: build_instrumented
 build_instrumented:
-	go test -c -o dist/main_cover -covermode=atomic -coverpkg=all ./cmd
+	go test -c -o dist/lnk-server-dbg -covermode=atomic -coverpkg=all ./cmd/server

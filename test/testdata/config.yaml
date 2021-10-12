@@ -1,0 +1,6 @@
+contexts:
+  - name: dev-test.example.com
+    server: dev-test.example.com:8080
+current-context: dev-test.example.com
+servers:
+  - server: dev-test.example.com:8080
