@@ -38,6 +38,7 @@ type Server struct {
 func ReadLocalConfig(path string) (*LocalConfig, error) {
 	var err error
 	var config LocalConfig
+
 	err = UnmarshalLocalConfigFile(path, &config)
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -192,6 +193,9 @@ func MarshalLocalYAMLFile(path string, obj interface{}) error {
 func UnmarshalLocalConfigFile(path string, obj interface{}) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return err
+		}
 		return fmt.Errorf("failed to read file %s", path)
 	}
 	err = yaml.Unmarshal(data, obj)
