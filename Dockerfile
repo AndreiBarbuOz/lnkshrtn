@@ -16,8 +16,4 @@ FROM ubuntu:20.10
 
 COPY --from=lnkshrtn-build /go/src/github.com/AndreiBarbuOz/lnkshrtn/dist/* /usr/local/bin
 
-USER root
-RUN ln -s /usr/local/bin/main /usr/local/bin/lnkshrtn-server
-RUN ln -s /usr/local/bin/main /usr/local/bin/lnkshrtn-sidecar
-
 USER 999

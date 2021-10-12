@@ -28,7 +28,7 @@ func Test_main(t *testing.T) {
 	waitCh := make(chan int, 1)
 
 	os.Args = args
-	os.Args[0] = "lnkshrtn-server"
+	os.Args[0] = "lnk-server"
 	go func() {
 		main()
 		close(waitCh)

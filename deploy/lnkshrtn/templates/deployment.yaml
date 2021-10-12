@@ -30,7 +30,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
         - name: {{ .Chart.Name }}-server
-          command: ["/usr/local/bin/lnkshrtn-server"]
+          command: ["/usr/local/bin/lnk-server"]
           {{- with .Values.args }}
           args:
             {{- toYaml . | nindent 12 }}

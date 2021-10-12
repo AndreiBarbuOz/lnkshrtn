@@ -35,7 +35,7 @@ func (r *MemoryLinkRepository) GetLinkByShortned(shortned string) (*domain.Link,
 	if ret, ok := r.links[shortned]; ok {
 		return newLinkFromModel(&ret), nil
 	}
-	return nil, fmt.Errorf("didn't find %s\n", shortned)
+	return nil, fmt.Errorf("didn't find %s", shortned)
 }
 
 func (r *MemoryLinkRepository) CreateLink(l *domain.Link) (*domain.Link, error) {
