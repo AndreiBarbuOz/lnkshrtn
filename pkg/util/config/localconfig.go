@@ -1,31 +1,26 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path"
 )
 
 // LocalConfig is a local lnkshrtn config file
 type LocalConfig struct {
-	CurrentContext string       `yaml:"current-context"`
-	Contexts       []ContextRef `yaml:"contexts"`
-	Servers        []Server     `yaml:"servers"`
+	CurrentContext string    `yaml:"current-context"`
+	Contexts       []Context `yaml:"contexts"`
+	Servers        []Server  `yaml:"servers"`
 }
 
-// ContextRef is a reference to a Server and User for an API client
-type ContextRef struct {
+// Context is a reference to a lnkshrt Server
+type Context struct {
 	Name   string `yaml:"name"`
 	Server string `yaml:"server"`
-}
-
-// Context is the resolved Server object
-type Context struct {
-	Name   string
-	Server Server
 }
 
 // Server contains the lnkshrtn server information
@@ -34,28 +29,39 @@ type Server struct {
 	Server string `yaml:"server"`
 }
 
+func NewLocalConfig() *LocalConfig {
+	return &LocalConfig{
+		CurrentContext: "",
+		Contexts:       make([]Context, 0, 0),
+		Servers:        make([]Server, 0, 0),
+	}
+}
+
 // ReadLocalConfig loads up the local configuration file. Returns nil if config does not exist
 func ReadLocalConfig(path string) (*LocalConfig, error) {
 	var err error
-	var config LocalConfig
+	var ret *LocalConfig
 
-	err = UnmarshalLocalConfigFile(path, &config)
-	if os.IsNotExist(err) {
-		return nil, nil
+	ret, err = getConfigFromFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read local config %s: %w", path, err)
 	}
-	err = ValidateLocalConfig(config)
+	if ret == nil {
+		return NewLocalConfig(), nil
+	}
+	err = validateLocalConfig(*ret)
 	if err != nil {
 		return nil, err
 	}
-	return &config, nil
+	return ret, nil
 }
 
-// ValidateLocalConfig validates the configuration object, after it was unmarshalled
-func ValidateLocalConfig(config LocalConfig) error {
+// validateLocalConfig validates the configuration object, after it was unmarshalled
+func validateLocalConfig(config LocalConfig) error {
 	if config.CurrentContext == "" {
 		return nil
 	}
-	if _, err := config.ResolveContext(config.CurrentContext); err != nil {
+	if _, err := config.resolveContext(config.CurrentContext); err != nil {
 		return fmt.Errorf("local config invalid: %w", err)
 	}
 	return nil
@@ -78,8 +84,8 @@ func DeleteLocalConfig(configPath string) error {
 	return os.Remove(configPath)
 }
 
-// ResolveContext resolves the specified context. If unspecified, resolves the current context
-func (l *LocalConfig) ResolveContext(name string) (*Context, error) {
+// resolveContext resolves the specified context. If unspecified, resolves the current context
+func (l *LocalConfig) resolveContext(name string) (*Context, error) {
 	if name == "" {
 		if l.CurrentContext == "" {
 			return nil, fmt.Errorf("local config: current-context unset")
@@ -88,94 +94,29 @@ func (l *LocalConfig) ResolveContext(name string) (*Context, error) {
 	}
 	for _, ctx := range l.Contexts {
 		if ctx.Name == name {
-			server, err := l.GetServer(ctx.Server)
+			server, err := l.getServer(ctx.Server)
 			if err != nil {
 				return nil, err
 			}
 			return &Context{
 				Name:   ctx.Name,
-				Server: *server,
+				Server: server.Server,
 			}, nil
 		}
 	}
 	return nil, fmt.Errorf("context '%s' undefined", name)
 }
 
-func (l *LocalConfig) GetServer(name string) (*Server, error) {
-	for _, s := range l.Servers {
-		if s.Server == name {
-			return &s, nil
+func (l *LocalConfig) getServer(name string) (*Server, error) {
+	if name == "" {
+		return nil, fmt.Errorf("server name cannot be empty")
+	}
+	for _, srv := range l.Servers {
+		if srv.Server == name {
+			return &srv, nil
 		}
 	}
-	return nil, fmt.Errorf("server '%s' undefined", name)
-}
-
-func (l *LocalConfig) UpsertServer(server Server) {
-	for i, s := range l.Servers {
-		if s.Server == server.Server {
-			l.Servers[i] = server
-			return
-		}
-	}
-	l.Servers = append(l.Servers, server)
-}
-
-// Returns true if server was removed successfully
-func (l *LocalConfig) RemoveServer(serverName string) bool {
-	for i, s := range l.Servers {
-		if s.Server == serverName {
-			l.Servers = append(l.Servers[:i], l.Servers[i+1:]...)
-			return true
-		}
-	}
-	return false
-}
-
-func (l *LocalConfig) UpsertContext(context ContextRef) {
-	for i, c := range l.Contexts {
-		if c.Name == context.Name {
-			l.Contexts[i] = context
-			return
-		}
-	}
-	l.Contexts = append(l.Contexts, context)
-}
-
-// Returns true if context was removed successfully
-func (l *LocalConfig) RemoveContext(serverName string) (string, bool) {
-	for i, c := range l.Contexts {
-		if c.Name == serverName {
-			l.Contexts = append(l.Contexts[:i], l.Contexts[i+1:]...)
-			return c.Server, true
-		}
-	}
-	return "", false
-}
-
-func (l *LocalConfig) IsEmpty() bool {
-	return len(l.Servers) == 0
-}
-
-// DefaultConfigDir returns the local configuration path
-func DefaultConfigDir() (string, error) {
-	homeDir := os.Getenv("HOME")
-	if homeDir == "" {
-		usr, err := user.Current()
-		if err != nil {
-			return "", err
-		}
-		homeDir = usr.HomeDir
-	}
-	return path.Join(homeDir, ".lnkshrtn"), nil
-}
-
-// DefaultLocalConfigPath returns the default local configuration path
-func DefaultLocalConfigPath() (string, error) {
-	dir, err := DefaultConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return path.Join(dir, "config"), nil
+	return nil, fmt.Errorf("server %s not found", name)
 }
 
 // MarshalLocalYAMLFile writes JSON or YAML to a file on disk.
@@ -188,20 +129,28 @@ func MarshalLocalYAMLFile(path string, obj interface{}) error {
 	return err
 }
 
-// UnmarshalLocalConfigFile retrieves JSON or YAML from a file on disk.
+// getConfigFromFile retrieves YAML from a file on disk.
 // The caller is responsible for checking error return values.
-func UnmarshalLocalConfigFile(path string, obj interface{}) error {
+func getConfigFromFile(path string) (*LocalConfig, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return err
+			return nil, nil
 		}
-		return fmt.Errorf("failed to read file %s", path)
+		return nil, fmt.Errorf("failed to read file %s", path)
 	}
-	err = yaml.Unmarshal(data, obj)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal object: %w", err)
-	}
+	return decode(data)
+}
 
-	return nil
+func decode(data []byte) (*LocalConfig, error) {
+	var ret LocalConfig
+	var reader io.Reader = bytes.NewReader(data)
+	var decoder = yaml.NewDecoder(reader)
+	decoder.KnownFields(true)
+
+	err := decoder.Decode(&ret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal object: %w", err)
+	}
+	return &ret, nil
 }

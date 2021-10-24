@@ -24,7 +24,7 @@ openapi_http:
 
 .PHONY: unit-test
 unit-test:
-	go test -v -race -coverprofile=coverage.out -covermode=atomic ./pkg/...
+	go test -v -race -coverprofile=coverage.out -covermode=atomic ./pkg/... ./cmd/cli/...
 
 .PHONY: build_instrumented
 build_instrumented:
