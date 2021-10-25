@@ -1,4 +1,4 @@
-package commands
+package link
 
 import (
 	"github.com/AndreiBarbuOz/lnkshrtn/pkg/apiclient"
@@ -15,18 +15,6 @@ func NewLinkCommand(clientOpts *apiclient.ApiClientOpts) *cobra.Command {
 			os.Exit(1)
 		},
 	}
-	command.AddCommand(NewLinkListCommand(clientOpts))
-	return command
-}
-
-func NewLinkListCommand(clientOpts *apiclient.ApiClientOpts) *cobra.Command {
-	var command = &cobra.Command{
-		Use:   "list",
-		Short: "List links",
-		Run: func(c *cobra.Command, args []string) {
-			c.HelpFunc()(c, args)
-			os.Exit(1)
-		},
-	}
+	command.AddCommand(NewGetLinkCommand(clientOpts))
 	return command
 }

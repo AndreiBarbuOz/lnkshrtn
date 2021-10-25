@@ -1,43 +1,111 @@
 package config
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
 
-func TestLocalConfig_ReadLocalConfig(t *testing.T) {
-	filePath := filepath.Join("../../../test/testdata", "config.yaml")
-	absolutePath, _ := filepath.Abs(filePath)
-	fmt.Printf("%+v\n", absolutePath)
-	cfg, err := ReadLocalConfig(absolutePath)
-	assert.Nil(t, err, "ReadLocalConfig returned non nil error")
-	assert.NotNil(t, cfg, "ReadLocalConfig returned nil config for existing file")
+func TestDecode_NilErr(t *testing.T) {
+	var testData = `contexts:
+  - name: alpha
+    server: server-alpha
+current-context: alpha
+servers:
+  - server: server-alpha
+`
 
-	assert.Equal(t, cfg.CurrentContext, "dev-test.example.com",
-		"ReadLocalConfig returned wrong current context")
-	assert.Contains(t, cfg.Servers, Server{Server: "dev-test.example.com:8080"})
-	assert.Contains(t, cfg.Contexts, ContextRef{
-		Name:   "dev-test.example.com",
-		Server: "dev-test.example.com:8080",
-	})
+	_, err := decode([]byte(testData))
+	assert.Nil(t, err, "decode returned non nil error: %v", err)
 }
 
-func TestLocalConfig_ReadLocalConfig_nonexisting(t *testing.T) {
-	filePath := filepath.Join("../../../test/testdata", "config-foo.yaml")
-	absolutePath, _ := filepath.Abs(filePath)
-	fmt.Printf("%+v\n", absolutePath)
-	cfg, err := ReadLocalConfig(absolutePath)
-	assert.Nil(t, err, "ReadLocalConfig returned non nil error for non existing file")
-	assert.Nil(t, cfg, "ReadLocalConfig returned non nil cfg for non existing file")
+func TestDecode_Invalid(t *testing.T) {
+	var testData = `key: value`
+	_, err := decode([]byte(testData))
+	assert.NotNil(t, err, "decode failed to return error on illegal config")
 }
 
-func TestLocalConfig_ReadLocalConfig_invalid(t *testing.T) {
-	filePath := filepath.Join("../../../test/testdata", "config-invalid.yaml")
-	absolutePath, _ := filepath.Abs(filePath)
-	fmt.Printf("%+v\n", absolutePath)
-	cfg, err := ReadLocalConfig(absolutePath)
-	assert.NotNil(t, err, "ReadLocalConfig returned nil error for invalid file")
-	assert.Nil(t, cfg, "ReadLocalConfig returned non nil cfg for invalid file")
+func TestDecode_ExtraFields(t *testing.T) {
+	var testData = `contexts:
+  - name: alpha
+    server: server-alpha
+	key: value
+current-context: alpha
+servers:
+  - server: server-alpha`
+	_, err := decode([]byte(testData))
+	assert.NotNil(t, err, "decode failed to return error on illegal config")
+}
+
+func TestReadLocalConfig_NilErr(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	if err := ioutil.WriteFile(cliFile.Name(), []byte("illegal value"), 0644); err != nil {
+		t.Fatalf("Error creating tempfile: %v", err)
+	}
+	_, err := ReadLocalConfig(cliFile.Name())
+	assert.NotNil(t, err, "ReadLocalConfig failed to return error on illegal config")
+}
+
+func TestReadLocalConfig_NonExistingFile(t *testing.T) {
+	var wd string
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Could not get the working directory: %v", err)
+	}
+	config, err := ReadLocalConfig(filepath.Join(wd, "non-exiting-file"))
+	assert.Nil(t, err, "decode failed to return nil error on non existing config")
+	assert.NotNil(t, config, "Expected non nil config, but received nil")
+}
+
+func TestReadLocalConfig_ValidFile(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	if err := ioutil.WriteFile(cliFile.Name(), []byte(`contexts:
+  - name: alpha
+    server: server-alpha
+current-context: alpha
+servers:
+  - server: server-alpha`), 0644); err != nil {
+		t.Fatalf("Error creating tempfile: %v", err)
+	}
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, err, "decode failed to return nil error on valid config")
+
+	var expected = &LocalConfig{
+		CurrentContext: "alpha",
+		Contexts: []Context{
+			{
+				Name:   "alpha",
+				Server: "server-alpha",
+			},
+		},
+		Servers: []Server{
+			{
+				Server: "server-alpha",
+			},
+		},
+	}
+	assert.Equal(t, expected, actual, "config read from file does not match expected")
+}
+
+func TestReadLocalConfig_InvalidContext(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	if err := ioutil.WriteFile(cliFile.Name(), []byte(`contexts:
+  - name: alpha
+    server: server-alpha
+current-context: beta
+servers:
+  - server: server-alpha`), 0644); err != nil {
+		t.Fatalf("Error creating tempfile: %v", err)
+	}
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, actual, "ReadLocalConfig failed to return nil output for invalid context")
+	assert.NotNil(t, err, "ReadLocalConfig failed to return non nil error for invalid context")
 }

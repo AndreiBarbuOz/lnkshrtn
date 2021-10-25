@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/commands"
+	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/commands/config"
+	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/commands/link"
 	"github.com/AndreiBarbuOz/lnkshrtn/pkg/apiclient"
 	"github.com/spf13/cobra"
 	"os"
@@ -39,10 +40,9 @@ func NewCommand() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	command.AddCommand(commands.NewLinkCommand(&clientOpts))
-	command.AddCommand(commands.NewContextCommand(&clientOpts))
+	command.AddCommand(link.NewLinkCommand(&clientOpts))
+	command.AddCommand(config.NewConfigCommand(&clientOpts))
 
-	command.PersistentFlags().StringVar(&clientOpts.ServerAddr, "server", "", "lnkshrtn server address")
 	command.PersistentFlags().StringVar(&clientOpts.ConfigPath, "config", "", "config file path")
 	return command
 }
