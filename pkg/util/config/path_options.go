@@ -12,6 +12,15 @@ type PathOptions struct {
 	explicitFileFlag string
 }
 
+type PathOptionsGetter interface {
+	GetActualConfigFile() string
+	IsExplicitFile() bool
+	GetExplicitFile() string
+	SetExplicitFlag(pathFlag string)
+}
+
+var _ PathOptionsGetter = &PathOptions{}
+
 const (
 	RecommendedConfigPathEnvVar = "LNKSHRTN_CONFIG"
 	RecommendedHomeDir          = ".lnkshrtn"
@@ -35,7 +44,7 @@ func getHomeDir() string {
 	return homeDir
 }
 
-func (p *PathOptions) GetEnvVarFile() string {
+func (p *PathOptions) getEnvVarFile() string {
 	if len(p.envVar) == 0 {
 		return ""
 	}
@@ -60,7 +69,7 @@ func (p *PathOptions) GetActualConfigFile() string {
 	if p.IsExplicitFile() {
 		return p.GetExplicitFile()
 	}
-	envVarFile := p.GetEnvVarFile()
+	envVarFile := p.getEnvVarFile()
 	if len(envVarFile) > 0 {
 		return envVarFile
 	}

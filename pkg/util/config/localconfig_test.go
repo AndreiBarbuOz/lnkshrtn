@@ -47,7 +47,7 @@ func TestReadLocalConfig_NilErr(t *testing.T) {
 		t.Fatalf("Error creating tempfile: %v", err)
 	}
 	_, err := ReadLocalConfig(cliFile.Name())
-	assert.NotNil(t, err, "decode failed to return error on illegal config")
+	assert.NotNil(t, err, "ReadLocalConfig failed to return error on illegal config")
 }
 
 func TestReadLocalConfig_NonExistingFile(t *testing.T) {
@@ -57,6 +57,55 @@ func TestReadLocalConfig_NonExistingFile(t *testing.T) {
 		t.Fatalf("Could not get the working directory: %v", err)
 	}
 	config, err := ReadLocalConfig(filepath.Join(wd, "non-exiting-file"))
-	assert.Nil(t, err, "decode failed to return error on illegal config")
+	assert.Nil(t, err, "decode failed to return nil error on non existing config")
 	assert.NotNil(t, config, "Expected non nil config, but received nil")
+}
+
+func TestReadLocalConfig_ValidFile(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	if err := ioutil.WriteFile(cliFile.Name(), []byte(`contexts:
+  - name: alpha
+    server: server-alpha
+current-context: alpha
+servers:
+  - server: server-alpha`), 0644); err != nil {
+		t.Fatalf("Error creating tempfile: %v", err)
+	}
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, err, "decode failed to return nil error on valid config")
+
+	var expected = &LocalConfig{
+		CurrentContext: "alpha",
+		Contexts: []Context{
+			{
+				Name:   "alpha",
+				Server: "server-alpha",
+			},
+		},
+		Servers: []Server{
+			{
+				Server: "server-alpha",
+			},
+		},
+	}
+	assert.Equal(t, expected, actual, "config read from file does not match expected")
+}
+
+func TestReadLocalConfig_InvalidContext(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	if err := ioutil.WriteFile(cliFile.Name(), []byte(`contexts:
+  - name: alpha
+    server: server-alpha
+current-context: beta
+servers:
+  - server: server-alpha`), 0644); err != nil {
+		t.Fatalf("Error creating tempfile: %v", err)
+	}
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, actual, "ReadLocalConfig failed to return nil output for invalid context")
+	assert.NotNil(t, err, "ReadLocalConfig failed to return non nil error for invalid context")
 }

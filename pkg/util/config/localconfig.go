@@ -137,7 +137,7 @@ func getConfigFromFile(path string) (*LocalConfig, error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to read file %s", path)
+		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 	return decode(data)
 }
