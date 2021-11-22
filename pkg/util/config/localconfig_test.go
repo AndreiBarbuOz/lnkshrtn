@@ -151,3 +151,40 @@ servers:
 	assert.Nil(t, actual, "ReadLocalConfig failed to return nil output for invalid context")
 	assert.NotNil(t, err, "ReadLocalConfig failed to return non nil error for invalid context")
 }
+
+func TestReadLocalConfig_AfterWrite(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	var cfg = &LocalConfig{
+		CurrentContext: "beta",
+		Contexts: []Context{
+			{
+				Name:   "alpha",
+				Server: "server-alpha",
+			},
+			{
+				Name:   "beta",
+				Server: "server-beta",
+			},
+		},
+		Servers: []Server{
+			{
+				Server: "server-alpha",
+			},
+			{
+				Server: "server-beta",
+			},
+		},
+	}
+
+	err := WriteConfigToFile(cfg, cliFile.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, err, "decode failed to return nil error on valid config")
+
+	assert.Equal(t, cfg, actual, "config read from file does not match expected")
+}
