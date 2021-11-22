@@ -1,12 +1,13 @@
 package link
 
 import (
+	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/util"
 	"github.com/AndreiBarbuOz/lnkshrtn/pkg/apiclient"
 	"github.com/spf13/cobra"
 	"os"
 )
 
-func NewLinkCommand(clientOpts *apiclient.ApiClientOpts) *cobra.Command {
+func NewLinkCommand(ioStreams util.IOStreams, clientOpts *apiclient.ApiClientOpts) *cobra.Command {
 	var command = &cobra.Command{
 		Use:   "link",
 		Short: "Manage links",
@@ -15,6 +16,6 @@ func NewLinkCommand(clientOpts *apiclient.ApiClientOpts) *cobra.Command {
 			os.Exit(1)
 		},
 	}
-	command.AddCommand(NewGetLinkCommand(clientOpts))
+	command.AddCommand(NewGetLinkCommand(ioStreams, clientOpts))
 	return command
 }

@@ -93,6 +93,48 @@ servers:
 	assert.Equal(t, expected, actual, "config read from file does not match expected")
 }
 
+func TestReadLocalConfig_ValidFileMultipleContexts(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	if err := ioutil.WriteFile(cliFile.Name(), []byte(`contexts:
+  - name: alpha
+    server: server-alpha
+  - name: beta
+    server: server-beta
+current-context: beta
+servers:
+  - server: server-alpha
+  - server: server-beta`), 0644); err != nil {
+		t.Fatalf("Error creating tempfile: %v", err)
+	}
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, err, "decode failed to return nil error on valid config")
+
+	var expected = &LocalConfig{
+		CurrentContext: "beta",
+		Contexts: []Context{
+			{
+				Name:   "alpha",
+				Server: "server-alpha",
+			},
+			{
+				Name:   "beta",
+				Server: "server-beta",
+			},
+		},
+		Servers: []Server{
+			{
+				Server: "server-alpha",
+			},
+			{
+				Server: "server-beta",
+			},
+		},
+	}
+	assert.Equal(t, expected, actual, "config read from file does not match expected")
+}
+
 func TestReadLocalConfig_InvalidContext(t *testing.T) {
 	cliFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(cliFile.Name())
@@ -108,4 +150,41 @@ servers:
 	actual, err := ReadLocalConfig(cliFile.Name())
 	assert.Nil(t, actual, "ReadLocalConfig failed to return nil output for invalid context")
 	assert.NotNil(t, err, "ReadLocalConfig failed to return non nil error for invalid context")
+}
+
+func TestReadLocalConfig_AfterWrite(t *testing.T) {
+	cliFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(cliFile.Name())
+
+	var cfg = &LocalConfig{
+		CurrentContext: "beta",
+		Contexts: []Context{
+			{
+				Name:   "alpha",
+				Server: "server-alpha",
+			},
+			{
+				Name:   "beta",
+				Server: "server-beta",
+			},
+		},
+		Servers: []Server{
+			{
+				Server: "server-alpha",
+			},
+			{
+				Server: "server-beta",
+			},
+		},
+	}
+
+	err := WriteConfigToFile(cfg, cliFile.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	actual, err := ReadLocalConfig(cliFile.Name())
+	assert.Nil(t, err, "decode failed to return nil error on valid config")
+
+	assert.Equal(t, cfg, actual, "config read from file does not match expected")
 }
