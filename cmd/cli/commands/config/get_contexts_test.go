@@ -12,7 +12,7 @@ import (
 type getContextsTest struct {
 	cfg            config.LocalConfig
 	expectedOutput string
-	showHeaders    bool
+	noHeaders      bool
 	nameOnly       bool
 	names          []string
 }
@@ -33,12 +33,145 @@ func TestGetContextsAll(t *testing.T) {
 		},
 	}
 	test := getContextsTest{
-		cfg:         testConf,
-		showHeaders: true,
-		nameOnly:    false,
-		names:       []string{},
+		cfg:       testConf,
+		noHeaders: false,
+		nameOnly:  false,
+		names:     []string{},
 		expectedOutput: `CURRENT  NAME    SERVER
 *        dragon  slayer
+`,
+	}
+	test.run(t)
+}
+
+func TestGetContextsNoHeaders(t *testing.T) {
+	testConf := config.LocalConfig{
+		CurrentContext: "dragon",
+		Contexts: []config.Context{
+			{
+				Name:   "dragon",
+				Server: "slayer",
+			},
+		},
+		Servers: []config.Server{
+			{
+				Server: "slayer",
+			},
+		},
+	}
+	test := getContextsTest{
+		cfg:       testConf,
+		noHeaders: true,
+		nameOnly:  false,
+		names:     []string{},
+		expectedOutput: `*  dragon  slayer
+`,
+	}
+	test.run(t)
+}
+
+func TestGetContextsOnlyNames(t *testing.T) {
+	testConf := config.LocalConfig{
+		CurrentContext: "dragon",
+		Contexts: []config.Context{
+			{
+				Name:   "dragon",
+				Server: "slayer",
+			},
+		},
+		Servers: []config.Server{
+			{
+				Server: "slayer",
+			},
+		},
+	}
+	test := getContextsTest{
+		cfg:       testConf,
+		noHeaders: false,
+		nameOnly:  true,
+		names:     []string{},
+		expectedOutput: `dragon
+`,
+	}
+	test.run(t)
+}
+
+func TestGetContextsEmpty(t *testing.T) {
+	testConf := config.LocalConfig{}
+	test := getContextsTest{
+		cfg:            testConf,
+		noHeaders:      true,
+		nameOnly:       false,
+		names:          []string{},
+		expectedOutput: "",
+	}
+	test.run(t)
+}
+
+func TestGetContextsMultiple(t *testing.T) {
+	testConf := config.LocalConfig{
+		CurrentContext: "dragon",
+		Contexts: []config.Context{
+			{
+				Name:   "dragon",
+				Server: "slayer",
+			},
+			{
+				Name:   "saint",
+				Server: "george",
+			},
+		},
+		Servers: []config.Server{
+			{
+				Server: "slayer",
+			},
+			{
+				Server: "george",
+			},
+		},
+	}
+	test := getContextsTest{
+		cfg:       testConf,
+		noHeaders: false,
+		nameOnly:  true,
+		names:     []string{},
+		expectedOutput: `dragon
+saint
+`,
+	}
+	test.run(t)
+}
+
+func TestGetContextsMultipleArgs(t *testing.T) {
+	testConf := config.LocalConfig{
+		CurrentContext: "dragon",
+		Contexts: []config.Context{
+			{
+				Name:   "dragon",
+				Server: "slayer",
+			},
+			{
+				Name:   "saint",
+				Server: "george",
+			},
+		},
+		Servers: []config.Server{
+			{
+				Server: "slayer",
+			},
+			{
+				Server: "george",
+			},
+		},
+	}
+	test := getContextsTest{
+		cfg:       testConf,
+		noHeaders: false,
+		nameOnly:  false,
+		names:     []string{"dragon", "saint"},
+		expectedOutput: `CURRENT  NAME    SERVER
+*        dragon  slayer
+         saint   george
 `,
 	}
 	test.run(t)
@@ -69,8 +202,8 @@ func (test getContextsTest) run(t *testing.T) {
 	if test.nameOnly {
 		cmd.Flags().Set("output", "name")
 	}
-	if test.showHeaders {
-		cmd.Flags().Set("no-headers", "false")
+	if test.noHeaders {
+		cmd.Flags().Set("no-headers", "true")
 	}
 	cmd.Run(cmd, test.names)
 	if len(test.expectedOutput) != 0 {

@@ -43,7 +43,7 @@ func NewGetContextsCommand(ioStreams util.IOStreams, clientOpts *apiclient.ApiCl
 				options.nameOnly = true
 			}
 			options.showHeaders = true
-			noHeader, _ := c.Flags().GetBool("no-header")
+			noHeader, _ := c.Flags().GetBool("no-headers")
 			if noHeader || options.nameOnly {
 				options.showHeaders = false
 			}

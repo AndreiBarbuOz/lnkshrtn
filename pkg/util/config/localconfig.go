@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -68,15 +67,6 @@ func validateLocalConfig(config LocalConfig) error {
 	return nil
 }
 
-// WriteLocalConfig writes a new local configuration file.
-func WriteLocalConfig(config *LocalConfig, configPath string) error {
-	err := os.MkdirAll(path.Dir(configPath), os.ModePerm)
-	if err != nil {
-		return err
-	}
-	return WriteConfigToFile(config, configPath)
-}
-
 func DeleteLocalConfig(configPath string) error {
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
@@ -133,6 +123,7 @@ func getConfigFromFile(path string) (*LocalConfig, error) {
 	return decode(data)
 }
 
+// WriteConfigToFile writes a new local configuration file.
 func WriteConfigToFile(cfg *LocalConfig, path string) error {
 	var data []byte
 	data, err := encode(cfg)
