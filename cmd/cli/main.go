@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/commands/config"
 	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/commands/link"
+	"github.com/AndreiBarbuOz/lnkshrtn/cmd/cli/util"
 	"github.com/AndreiBarbuOz/lnkshrtn/pkg/apiclient"
 	"github.com/spf13/cobra"
 	"os"
@@ -16,7 +17,13 @@ const (
 func main() {
 	var command *cobra.Command
 
-	command = NewCommand()
+	ioStreams := util.IOStreams{
+		In:     os.Stdin,
+		Out:    os.Stdout,
+		ErrOut: os.Stderr,
+	}
+
+	command = NewCommand(ioStreams)
 
 	err := command.Execute()
 	if err != nil {
@@ -25,7 +32,7 @@ func main() {
 	}
 }
 
-func NewCommand() *cobra.Command {
+func NewCommand(ioStreams util.IOStreams) *cobra.Command {
 
 	var (
 		clientOpts apiclient.ApiClientOpts
@@ -40,10 +47,10 @@ func NewCommand() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	command.AddCommand(link.NewLinkCommand(&clientOpts))
-	command.AddCommand(config.NewConfigCommand(&clientOpts))
+	command.AddCommand(link.NewLinkCommand(ioStreams, &clientOpts))
+	command.AddCommand(config.NewConfigCommand(ioStreams, &clientOpts))
 
-	command.PersistentFlags().StringVar(&clientOpts.ConfigPath, "config", "", "config file path")
+	command.PersistentFlags().StringVar(&clientOpts.ConfigPath.ExplicitFileFlag, "config", "", "config file path")
 	return command
 }
 

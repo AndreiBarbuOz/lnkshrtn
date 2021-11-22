@@ -7,9 +7,10 @@ import (
 )
 
 type PathOptions struct {
-	globalFile       string
-	envVar           string
-	explicitFileFlag string
+	// globalFile is the default file storing lnkshrtn configurations
+	GlobalFile       string
+	EnvVar           string
+	ExplicitFileFlag string
 }
 
 type PathOptionsGetter interface {
@@ -45,11 +46,11 @@ func getHomeDir() string {
 }
 
 func (p *PathOptions) getEnvVarFile() string {
-	if len(p.envVar) == 0 {
+	if len(p.EnvVar) == 0 {
 		return ""
 	}
 
-	envVarValue := os.Getenv(p.envVar)
+	envVarValue := os.Getenv(p.EnvVar)
 	if len(envVarValue) == 0 {
 		return ""
 	}
@@ -58,11 +59,11 @@ func (p *PathOptions) getEnvVarFile() string {
 }
 
 func (p *PathOptions) IsExplicitFile() bool {
-	return len(p.explicitFileFlag) > 0
+	return len(p.ExplicitFileFlag) > 0
 }
 
 func (p *PathOptions) GetExplicitFile() string {
-	return p.explicitFileFlag
+	return p.ExplicitFileFlag
 }
 
 func (p *PathOptions) GetActualConfigFile() string {
@@ -73,17 +74,17 @@ func (p *PathOptions) GetActualConfigFile() string {
 	if len(envVarFile) > 0 {
 		return envVarFile
 	}
-	return p.globalFile
+	return p.GlobalFile
 }
 
 func (p *PathOptions) SetExplicitFlag(pathFlag string) {
-	p.explicitFileFlag = pathFlag
+	p.ExplicitFileFlag = pathFlag
 }
 
 func NewDefaultPathOptions() *PathOptions {
 	return &PathOptions{
-		globalFile:       RecommendedHomeFile,
-		envVar:           RecommendedConfigPathEnvVar,
-		explicitFileFlag: "",
+		GlobalFile:       RecommendedHomeFile,
+		EnvVar:           RecommendedConfigPathEnvVar,
+		ExplicitFileFlag: "",
 	}
 }

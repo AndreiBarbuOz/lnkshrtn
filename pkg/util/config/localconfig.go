@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 // LocalConfig is a local lnkshrtn config file
@@ -68,12 +69,12 @@ func validateLocalConfig(config LocalConfig) error {
 }
 
 // WriteLocalConfig writes a new local configuration file.
-func WriteLocalConfig(config LocalConfig, configPath string) error {
+func WriteLocalConfig(config *LocalConfig, configPath string) error {
 	err := os.MkdirAll(path.Dir(configPath), os.ModePerm)
 	if err != nil {
 		return err
 	}
-	return MarshalLocalYAMLFile(configPath, config)
+	return WriteConfigToFile(config, configPath)
 }
 
 func DeleteLocalConfig(configPath string) error {
@@ -119,16 +120,6 @@ func (l *LocalConfig) getServer(name string) (*Server, error) {
 	return nil, fmt.Errorf("server %s not found", name)
 }
 
-// MarshalLocalYAMLFile writes JSON or YAML to a file on disk.
-// The caller is responsible for checking error return values.
-func MarshalLocalYAMLFile(path string, obj interface{}) error {
-	yamlData, err := yaml.Marshal(obj)
-	if err == nil {
-		err = ioutil.WriteFile(path, yamlData, 0600)
-	}
-	return err
-}
-
 // getConfigFromFile retrieves YAML from a file on disk.
 // The caller is responsible for checking error return values.
 func getConfigFromFile(path string) (*LocalConfig, error) {
@@ -142,6 +133,25 @@ func getConfigFromFile(path string) (*LocalConfig, error) {
 	return decode(data)
 }
 
+func WriteConfigToFile(cfg *LocalConfig, path string) error {
+	var data []byte
+	data, err := encode(cfg)
+	if err != nil {
+		return fmt.Errorf("cannot write config to file: %w", err)
+	}
+	dir := filepath.Dir(path)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err = os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("cannot create dir %s: %w", dir, err)
+		}
+	}
+
+	if err := ioutil.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("cannot write config to file %s: %w", path, err)
+	}
+	return nil
+}
+
 func decode(data []byte) (*LocalConfig, error) {
 	var ret LocalConfig
 	var reader io.Reader = bytes.NewReader(data)
@@ -153,4 +163,14 @@ func decode(data []byte) (*LocalConfig, error) {
 		return nil, fmt.Errorf("failed to unmarshal object: %w", err)
 	}
 	return &ret, nil
+}
+
+func encode(cfg *LocalConfig) ([]byte, error) {
+	var ret []byte
+
+	ret, err := yaml.Marshal(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal object: %w", err)
+	}
+	return ret, nil
 }
